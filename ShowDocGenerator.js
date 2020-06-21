@@ -43,13 +43,15 @@ let ExportApiToShowDoc = function() {
 
 
              // get the latest response status code
-             var status_code = request.getLastExchange().responseStatusCode;
-             // get the latest response body
-             if(status_code == 200){
-                var body = request.getLastExchange().responseBody;
-                // generated += status_code + "\n" + body + "\n\n";
-                view.response = jsonFormat(body);
-                view.responseParam = oJsonToParam(JSON.parse(body), '', '');
+             if (request.getLastExchange()) {
+                var status_code = request.getLastExchange().responseStatusCode;
+               // get the latest response body
+               if(status_code == 200){
+                  var body = request.getLastExchange().responseBody;
+                  // generated += status_code + "\n" + body + "\n\n";
+                  view.response = jsonFormat(body);
+                  view.responseParam = oJsonToParam(JSON.parse(body), '', '');
+               }
              }
 
              // render the template
