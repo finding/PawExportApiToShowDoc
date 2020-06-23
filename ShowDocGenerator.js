@@ -156,6 +156,38 @@ function isArrayFn(value) {
     }
 }
 
+var convertEnvByType = function convertEnvByType(dynamicString, request, type) {
+  if (!dynamicString) {
+    return '';
+  }
+
+  return dynamicString.components.map(function (component) {
+    if (typeof component === 'string') {
+      return component;
+    }
+
+    if (component.type === 'com.luckymarmot.EnvironmentVariableDynamicValue') {
+      var envVarId = component.environmentVariable;
+      var envVar = context.getEnvironmentVariableById(envVarId);
+
+      if (envVar) {
+        return "{{".concat(envVar.name, "}}");
+      }
+    }else if(component.type == 'com.luckymarmot.RequestVariableDynamicValue' && type){
+      var tmp = request.getVariableById(component.variableUUID);
+      console.log('=====')
+      console.log(tmp)
+      console.log(type)
+      getObjAttr(tmp)
+      return tmp[type] ? tmp[type] : ''
+    }else{
+      return null;
+    }
+
+    // return component.getEvaluatedString();
+  }).join('');
+};
+
 
 //-----------------------------------
 var convertEnvString = function convertEnvString(dynamicString, context) {
@@ -257,7 +289,7 @@ var convertRaw = function convertRaw(dynamicString, onlyDynamicValue, context) {
   return [pmBody, pmHeaders];
 };
 
-var convertBodyUrlEncoded = function convertBodyUrlEncoded(pawUrlEncodedBody, context) {
+var convertBodyUrlEncoded = function convertBodyUrlEncoded(pawUrlEncodedBody, context, request) {
   var pmParams = Object.entries(pawUrlEncodedBody).map(function (_ref) {
     var _ref2 = src_slicedToArray(_ref, 2),
         key = _ref2[0],
@@ -266,8 +298,8 @@ var convertBodyUrlEncoded = function convertBodyUrlEncoded(pawUrlEncodedBody, co
     var pmParam = {
       key: key || '',
       value: convertEnvString(value, context),
-      required: false,
-      description: '-'
+      required: convertEnvByType(value, request, 'required') ? true : false,
+      description: convertEnvByType(value, request, 'description')
     };
     return pmParam;
   });
@@ -279,7 +311,7 @@ var convertBodyUrlEncoded = function convertBodyUrlEncoded(pawUrlEncodedBody, co
   return [pmBody, makeContentTypeHeader('application/x-www-form-urlencoded')];
 };
 
-var convertBodyMultipart = function convertBodyMultipart(pawMultipartBody, context) {
+var convertBodyMultipart = function convertBodyMultipart(pawMultipartBody, context, request) {
   var pmParams = Object.entries(pawMultipartBody).map(function (_ref3) {
     var _ref4 = src_slicedToArray(_ref3, 2),
         key = _ref4[0],
@@ -291,9 +323,9 @@ var convertBodyMultipart = function convertBodyMultipart(pawMultipartBody, conte
     if (valueOnlyDv && valueOnlyDv.type === 'com.luckymarmot.FileContentDynamicValue') {
       var _pmParam = {
         key: key || '',
-        required: false,
+        required: convertEnvByType(value, request, 'required') ? true : false,
         type: 'file',
-        description: '-',
+        description: convertEnvByType(value, request, 'description'),
         src: null
       };
       return _pmParam;
@@ -335,14 +367,14 @@ var convertBody = function convertBody(pawRequest, context) {
   var pawUrlEncodedBody = pawRequest.getUrlEncodedBody(true);
 
   if (pawUrlEncodedBody) {
-    return convertBodyUrlEncoded(pawUrlEncodedBody, context);
+    return convertBodyUrlEncoded(pawUrlEncodedBody, context, pawRequest);
   } // Multipart (formdata)
 
 
   var pawMultipartBody = pawRequest.getMultipartBody(true);
 
   if (pawMultipartBody) {
-    return convertBodyMultipart(pawMultipartBody, context);
+    return convertBodyMultipart(pawMultipartBody, context, pawRequest);
   } // Body as DV
 
 
