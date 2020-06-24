@@ -132,8 +132,12 @@ function convertQueryParam(parameters, request){
 function oJsonToParam(oJson, str, separator){
     if (isArrayFn(oJson)) {
         var tmp = oJson[0];
-        for (var k in tmp) {
-            str += '| ' + separator + k + ' | string | - |\n';
+        if(tmp && typeof tmp == 'object'){
+          for (var k in tmp) {
+              str += '| ' + separator + k + ' | string | - |\n';
+          }
+        }else{
+          str += '| ' + separator + '0' + ' | string | - |\n';
         }
     } else if (oJson instanceof Object) {
         for (var k in oJson) {
