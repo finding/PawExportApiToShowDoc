@@ -2,63 +2,64 @@ var Mustache = require('./mustache')
 // legacy, import the mustache.js script (to Paw 2.2.2)
 // require("mustache.js");
 
-let ExportApiToShowDoc = function() {
-  this.generate = function(context, requests, options) {
-         var generated = "";
-        // import the mustache template
-        var template = readFile("my-template.mustache");
-        // iterate requests (`Request` objects)
-        for (var i in requests) {
-             var request = requests[i];
-             // define your view
-             var view = {
-                "description": request.description ? request.description : request.name,
-                "headers": [],
-                "url": convertEnvString(request.getUrlBase(true), context),
-                "method": request.getMethod(),
-                "parameters": [],
-                "request": request,
-                "response": '',
-                "responseParam": ''
-             };
+let ExportApiToShowDoc = function () {
+  this.generate = function (context, requests, options) {
+    var generated = "";
+    // import the mustache template
+    var template = readFile("my-template.mustache");
+    // iterate requests (`Request` objects)
+    for (var i in requests) {
+      var request = requests[i];
+      // define your view
+      console.log('request', JSON.stringify(request))
+      var view = {
+        "description": request.description ? request.description : request.name,
+        "headers": [],
+        "url": convertEnvString(request.getUrlBase(true), context),
+        "method": request.getMethod(),
+        "parameters": [],
+        "request": request,
+        "response": '',
+        "responseParam": ''
+      };
 
-             // iterate on request headers
-             // var content_type = request.getHeaderByName('Content-Type')
-             var headers = request.getHeaders();
-             for (var header_name in headers) {
-                 view.headers.push({
-                    key: header_name,
-                    value: headers[header_name]
-                 })
-             }
+      // iterate on request headers
+      // var content_type = request.getHeaderByName('Content-Type')
+      var headers = request.getHeaders();
+      for (var header_name in headers) {
+        view.headers.push({
+          key: header_name,
+          value: headers[header_name]
+        })
+      }
 
-             // parameters
-             if(request.getMethod() == 'GET'){
-                var parameters = request.getUrlParameters(true);
-                view.parameters = convertQueryParam(parameters, request);
-             }else if(request.getMethod() == 'POST'){
-                var body = convertBody(request, context)[0];
-                view.parameters = body[body.mode]
-             }
+      // parameters
+      if (request.getMethod() == 'GET') {
+        var parameters = request.getUrlParameters(true);
+        view.parameters = convertQueryParam(parameters, request);
+      } else if (request.getMethod() == 'POST') {
+        var body = convertBody(request, context)[0];
+        view.parameters = body[body.mode]
+      }
 
 
-             // get the latest response status code
-             if (request.getLastExchange()) {
-                var status_code = request.getLastExchange().responseStatusCode;
-               // get the latest response body
-               if(status_code == 200){
-                  var body = request.getLastExchange().responseBody;
-                  // generated += status_code + "\n" + body + "\n\n";
-                  view.response = jsonFormat(body);
-                  view.responseParam = oJsonToParam(JSON.parse(body), '', '');
-               }
-             }
+      // get the latest response status code
+      if (request.getLastExchange()) {
+        var status_code = request.getLastExchange().responseStatusCode;
+        // get the latest response body
+        if (status_code == 200) {
+          var body = request.getLastExchange().responseBody;
+          // generated += status_code + "\n" + body + "\n\n";
+          view.response = jsonFormat(body);
+          view.responseParam = oJsonToParam(JSON.parse(body), '', '');
+        }
+      }
 
-             // render the template
-             generated += Mustache.render(template, view) + "\n\n";
-         }
-         return generated;
+      // render the template
+      generated += Mustache.render(template, view) + "\n\n";
     }
+    return generated;
+  }
 }
 
 
@@ -77,16 +78,16 @@ function jsonFormat(sJson) {
 }
 
 function getObjAttr(obj) {
-    var keys = Object.keys(obj);
-    console.log(keys);
-    for(var i = 0;i < keys.length;i++){
-        console.log(keys[i] + " => " + obj[keys[i]])
-    }
+  var keys = Object.keys(obj);
+  console.log(keys);
+  for (var i = 0; i < keys.length; i++) {
+    console.log(keys[i] + " => " + obj[keys[i]])
+  }
 }
 
 
 //-----------------------------
-function convertQueryParam(parameters, request){
+function convertQueryParam(parameters, request) {
   // var data = {
   //   key: '',
   //   required: '',
@@ -97,24 +98,24 @@ function convertQueryParam(parameters, request){
 
   for (var parameters_name in parameters) {
     var components = parameters[parameters_name].components;
-    if(components[0] !== undefined){
-        if(components[0].type == 'com.luckymarmot.RequestVariableDynamicValue'){
-            var tmp = request.getVariableById(parameters[parameters_name].components[0].variableUUID);
-            data.push({
-                key: tmp.name,
-                required: tmp.required,
-                description: tmp.description,
-                value: tmp.value.components[0] ? tmp.value.components[0] : '-',
-            })
-        }else{
-            data.push({
-                key: parameters_name,
-                required: false,
-                description: '-',
-                value: components[0],
-            })
-        }
-    }else{
+    if (components[0] !== undefined) {
+      if (components[0].type == 'com.luckymarmot.RequestVariableDynamicValue') {
+        var tmp = request.getVariableById(parameters[parameters_name].components[0].variableUUID);
+        data.push({
+          key: tmp.name,
+          required: tmp.required,
+          description: tmp.description,
+          value: tmp.value.components[0] ? tmp.value.components[0] : '-',
+        })
+      } else {
+        data.push({
+          key: parameters_name,
+          required: false,
+          description: '-',
+          value: components[0],
+        })
+      }
+    } else {
       data.push({
         key: parameters_name,
         required: false,
@@ -129,35 +130,35 @@ function convertQueryParam(parameters, request){
 
 
 //---------------------------------
-function oJsonToParam(oJson, str, separator){
-    if (isArrayFn(oJson)) {
-        var tmp = oJson[0];
-        if(tmp && typeof tmp == 'object'){
-          for (var k in tmp) {
-              str += '| ' + separator + k + ' | string | - |\n';
-          }
-        }else{
-          str += '| ' + separator + '0' + ' | string | - |\n';
-        }
-    } else if (oJson instanceof Object) {
-        for (var k in oJson) {
-            if (typeof oJson[k] == 'object') {
-                str += '| ' + separator + k + ' | object | - |\n';
-                str = oJsonToParam(oJson[k], str, separator + '- ')
-            } else {
-                str += '| ' + separator + k + ' | string | - |\n';
-            }
-        }
+function oJsonToParam(oJson, str, separator) {
+  if (isArrayFn(oJson)) {
+    var tmp = oJson[0];
+    if (tmp && typeof tmp == 'object') {
+      for (var k in tmp) {
+        str += '| ' + separator + k + ' | string | - |\n';
+      }
+    } else {
+      str += '| ' + separator + '0' + ' | string | - |\n';
     }
-    return str;
+  } else if (oJson instanceof Object) {
+    for (var k in oJson) {
+      if (typeof oJson[k] == 'object') {
+        str += '| ' + separator + k + ' | object | - |\n';
+        str = oJsonToParam(oJson[k], str, separator + '- ')
+      } else {
+        str += '| ' + separator + k + ' | string | - |\n';
+      }
+    }
+  }
+  return str;
 }
 
 function isArrayFn(value) {
-    if (typeof Array.isArray === "function") {
-        return Array.isArray(value);
-    } else {
-        return Object.prototype.toString.call(value) === "[object Array]";
-    }
+  if (typeof Array.isArray === "function") {
+    return Array.isArray(value);
+  } else {
+    return Object.prototype.toString.call(value) === "[object Array]";
+  }
 }
 
 var convertEnvByType = function convertEnvByType(dynamicString, request, type) {
@@ -177,14 +178,14 @@ var convertEnvByType = function convertEnvByType(dynamicString, request, type) {
       if (envVar) {
         return "{{".concat(envVar.name, "}}");
       }
-    }else if(component.type == 'com.luckymarmot.RequestVariableDynamicValue' && type){
+    } else if (component.type == 'com.luckymarmot.RequestVariableDynamicValue' && type) {
       var tmp = request.getVariableById(component.variableUUID);
-      console.log('=====')
-      console.log(tmp)
-      console.log(type)
+      // console.log('=====')
+      // console.log(tmp)
+      // console.log(type)
       getObjAttr(tmp)
       return tmp[type] ? tmp[type] : ''
-    }else{
+    } else {
       return null;
     }
 
@@ -296,8 +297,8 @@ var convertRaw = function convertRaw(dynamicString, onlyDynamicValue, context) {
 var convertBodyUrlEncoded = function convertBodyUrlEncoded(pawUrlEncodedBody, context, request) {
   var pmParams = Object.entries(pawUrlEncodedBody).map(function (_ref) {
     var _ref2 = src_slicedToArray(_ref, 2),
-        key = _ref2[0],
-        value = _ref2[1];
+      key = _ref2[0],
+      value = _ref2[1];
 
     var pmParam = {
       key: key || '',
@@ -318,8 +319,8 @@ var convertBodyUrlEncoded = function convertBodyUrlEncoded(pawUrlEncodedBody, co
 var convertBodyMultipart = function convertBodyMultipart(pawMultipartBody, context, request) {
   var pmParams = Object.entries(pawMultipartBody).map(function (_ref3) {
     var _ref4 = src_slicedToArray(_ref3, 2),
-        key = _ref4[0],
-        value = _ref4[1];
+      key = _ref4[0],
+      value = _ref4[1];
 
     // file
     var valueOnlyDv = value ? value.getOnlyDynamicValue() : null;
