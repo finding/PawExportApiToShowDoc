@@ -56,6 +56,9 @@ let ExportApiToShowDoc = function () {
       }
 
       // render the template
+      if (requests.length > 1) {
+        generated += `## ${i*1 + 1}. ${request.name}\n\n`
+      }
       generated += Mustache.render(template, view) + "\n\n";
     }
     return generated;
@@ -74,7 +77,7 @@ registerCodeGenerator(ExportApiToShowDoc);
 
 function jsonFormat(sJson) {
   let oJson = JSON.parse(sJson);
-  return JSON.stringify(oJson, null, "    ");
+  return JSON.stringify(oJson, null, "  ");
 }
 
 function getObjAttr(obj) {
