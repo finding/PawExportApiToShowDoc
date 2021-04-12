@@ -11,7 +11,6 @@ let ExportApiToShowDoc = function () {
     for (var i in requests) {
       var request = requests[i];
       // define your view
-      console.log('request', JSON.stringify(request))
       var view = {
         "description": request.description ? request.description : request.name,
         "headers": [],
@@ -39,7 +38,9 @@ let ExportApiToShowDoc = function () {
         view.parameters = convertQueryParam(parameters, request);
       } else if (request.getMethod() == 'POST') {
         var body = convertBody(request, context)[0];
-        view.parameters = body[body.mode]
+        if (body) {
+          view.parameters = body[body.mode]
+        }
       }
 
 
