@@ -47,7 +47,7 @@ let ExportApiToShowDoc = function () {
               jsonData.push({
                 key: key,
                 value: jsonObj[key],
-                required: '',
+                required: true,
                 description: jsonObj[key]
               })
             }
