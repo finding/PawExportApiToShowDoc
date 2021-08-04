@@ -40,7 +40,25 @@ let ExportApiToShowDoc = function () {
         var body = convertBody(request, context)[0];
         if (body) {
           view.parameters = body[body.mode]
+          if (request.getHeaderByName("Content-Type") && request.getHeaderByName("Content-Type").indexOf('application/json') >= 0) {
+            const jsonObj = JSON.parse(body[body.mode])
+            var jsonData = []
+            for(var key in jsonObj){
+              jsonData.push({
+                key: key,
+                value: jsonObj[key],
+                required: '',
+                description: jsonObj[key]
+              })
+            }
+            view.parameters = jsonData
+          }
         }
+      }
+      if(view.parameters){
+        view.parameters.map(v => {
+          v['type'] = typeof(v.value)
+        })
       }
 
 
