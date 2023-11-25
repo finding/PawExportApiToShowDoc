@@ -41,6 +41,7 @@ let ExportApiToShowDoc = function () {
         if (body) {
           view.parameters = body[body.mode]
           if (request.getHeaderByName("Content-Type") && request.getHeaderByName("Content-Type").indexOf('application/json') >= 0) {
+            view['body'] = request.body ? jsonFormat(request.body) : {}
             const jsonObj = JSON.parse(body[body.mode])
             var jsonData = []
             for(var key in jsonObj){
