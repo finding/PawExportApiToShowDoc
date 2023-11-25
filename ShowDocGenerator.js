@@ -18,6 +18,7 @@ let ExportApiToShowDoc = function () {
         "method": request.getMethod(),
         "parameters": [],
         "request": request,
+        "body": request.body,
         "response": '',
         "responseParam": ''
       };
@@ -44,23 +45,26 @@ let ExportApiToShowDoc = function () {
             view['body'] = request.body ? jsonFormat(request.body) : {}
             const jsonObj = JSON.parse(body[body.mode])
             var jsonData = []
-            for(var key in jsonObj){
+            /* for(var key in jsonObj){
               jsonData.push({
                 key: key,
                 value: jsonObj[key],
                 required: true,
                 description: jsonObj[key]
               })
-            }
+            } */
+            jsonData = oJsonToRequestParam(jsonObj)
             view.parameters = jsonData
+            console.log('jsonData => ', JSON.stringify(jsonData))
           }
         }
       }
-      if(view.parameters){
+
+      /* if(view.parameters && typeof view.parameters == 'array'){
         view.parameters.map(v => {
           v['type'] = typeof(v.value)
         })
-      }
+      } */
 
 
       // get the latest response status code
@@ -158,23 +162,56 @@ function oJsonToParam(oJson, str, separator) {
     var tmp = oJson[0];
     if (tmp && typeof tmp == 'object') {
       for (var k in tmp) {
-        str += '| ' + separator + k + ' | string | - |\n';
+        var type = isArrayFn(tmp[k]) ? 'array' : typeof tmp[k]
+        str += '| ' + separator + k + ' | ' + type + ' | - |\n';
       }
     } else {
-      str += '| ' + separator + '0' + ' | string | - |\n';
+      var type = isArrayFn(tmp) ? 'array' : typeof tmp
+      str += '| ' + separator + '0' + ' | ' + type + ' | - |\n';
     }
   } else if (oJson instanceof Object) {
     for (var k in oJson) {
+      var type = isArrayFn(oJson[k]) ? 'array' : typeof oJson[k]
       if (typeof oJson[k] == 'object') {
-        str += '| ' + separator + k + ' | object | - |\n';
+        str += '| ' + separator + k + ' | ' + type + ' | - |\n';
         str = oJsonToParam(oJson[k], str, separator + '- ')
       } else {
-        str += '| ' + separator + k + ' | string | - |\n';
+        str += '| ' + separator + k + ' | ' + type + ' | - |\n';
       }
     }
   }
   return str;
 }
+
+function  oJsonToRequestParam (obj, res = [], sp = '') {
+    if(isArrayFn(obj)){
+        obj = obj[0]
+    }
+    if(typeof obj == 'object'){
+        for(var key in obj){
+            if(typeof obj[key] == 'array' || typeof obj[key] == 'object'){
+                res.push({
+                    key: sp + key,
+                    value: '',
+                    type: isArrayFn(obj[key]) ? 'array' : typeof obj[key],
+                    required: true,
+                    description: ''
+                  })
+                oJsonToRequestParam(obj[key], res, sp + '- ')
+            }else{
+                res.push({
+                    key: sp + key,
+                    value: obj[key],
+                    type: typeof obj[key],
+                    required: true,
+                    description: obj[key]
+                  })
+            }
+        }
+    }
+    return res
+}
+
 
 function isArrayFn(value) {
   if (typeof Array.isArray === "function") {
