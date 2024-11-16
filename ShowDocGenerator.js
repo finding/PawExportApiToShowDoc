@@ -29,7 +29,7 @@ let ExportApiToShowDoc = function () {
       for (var header_name in headers) {
         view.headers.push({
           key: header_name,
-          value: headers[header_name]
+          value: headers[header_name].substr(0, 100)
         })
       }
 
