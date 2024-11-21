@@ -37,7 +37,7 @@ let ExportApiToShowDoc = function () {
       if (request.getMethod() == 'GET') {
         var parameters = request.getUrlParameters(true);
         view.parameters = convertQueryParam(parameters, request);
-      } else if (request.getMethod() == 'POST') {
+      } else if (request.getMethod() == 'POST' || request.getMethod() == 'PUT') {
         var body = convertBody(request, context)[0];
         if (body) {
           view.parameters = body[body.mode]
